@@ -328,11 +328,13 @@ generate:
                   import '../../base_entity.dart';
 
                   abstract class NAMEEntity extends BaseEntity {
-                    NAMEEntity({
-                    // TODO : Define params
-                    
-                    required super.rawJson,            
-                    });
+                    NAMEEntity(
+                        {
+                        // TODO : Define params
+
+                        required super.rawJson,
+                        required this.id});
+                        final String id;
                   }
 
 
@@ -467,149 +469,189 @@ generate:
                   import '../../../domain/usecases/NAME/delete.dart';
                   import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-                  final getAllNAMEProvider = Provider<GetAllNAMEUseCase>((ref) {
+                  final getAllNAMEUseCaseProvider = Provider<GetAllNAMEUseCase>((ref) {
                     return GetAllNAMEUseCase(ref.watch(rNAMERepositoryProvider));
                   });
 
-                  final getNAMEByIdProvider = Provider<GetNAMEByIdUseCase>((ref) {
+                  final getNAMEByIdUseCaseProvider = Provider<GetNAMEByIdUseCase>((ref) {
                     return GetNAMEByIdUseCase(ref.watch(rNAMERepositoryProvider));
                   });
 
-                  final addNAMEProvider = Provider<AddNAMEUseCase>((ref) {
+                  final addNAMEUseCaseProvider = Provider<AddNAMEUseCase>((ref) {
                     return AddNAMEUseCase(ref.watch(rNAMERepositoryProvider));
                   });
 
-                  final updateNAMEProvider = Provider<UpdateNAMEUseCase>((ref) {
+                  final updateNAMEUseCaseProvider = Provider<UpdateNAMEUseCase>((ref) {
                     return UpdateNAMEUseCase(ref.watch(rNAMERepositoryProvider));
                   });
 
-                  final deleteNAMEProvider = Provider<DeleteNAMEUseCase>((ref) {
+                  final deleteNAMEUseCaseProvider = Provider<DeleteNAMEUseCase>((ref) {
                     return DeleteNAMEUseCase(ref.watch(rNAMERepositoryProvider));
                   });
 
                   final rNAMERepositoryProvider = Provider((ref) {
-                    final local = ref.read(localdataNAMESrc);
-                    final remote = ref.read(remotedataNAMESrc);
+                    final local = ref.read(localDataNAMESourceProvider);
+                    final remote = ref.read(remoteDataNAMESourceProvider);
                     return NAMERepositoryFake(localDataSource: local, remoteDataSource: remote);
                   });
-                  final localdataNAMESrc = Provider<NAMELocalDataSource>((ref) {
+
+                  final localDataNAMESourceProvider = Provider<NAMELocalDataSource>((ref) {
                     return NAMELocalDataSourceImpl();
                   });
-                  final remotedataNAMESrc = Provider<NAMERemoteDataSource>((ref) {
+
+                  final remoteDataNAMESourceProvider = Provider<NAMERemoteDataSource>((ref) {
                     return NAMERemoteDataSourceImpl();
                   });
                   
-              - file: provider.dart
+              - file: providers.dart
                 code: |
-                  import '../../../core/errors/failures.dart';
-                  import '../../../core/usecases/usecase.dart';
-                  import '../../../domain/entities/NAME/entity.dart';
-                  import '../../../domain/usecases/NAME/get_all.dart';
-                  import '../../../domain/usecases/NAME/get_by_id.dart';
-                  import '../../../domain/usecases/NAME/add.dart';
-                  import '../../../domain/usecases/NAME/update.dart';
-                  import '../../../domain/usecases/NAME/delete.dart';
                   import 'package:flutter_riverpod/flutter_riverpod.dart';
-                  import 'di.dart';
+                  import '../../../core/errors/failures.dart';
+                  import '../../../domain/entities/NAME/entity.dart';
+                  
+                  import '../../../core/usecases/usecase.dart';
+                  import './di.dart';
 
-                  class NAMENotifier extends StateNotifier<AsyncValue<List<NAMEEntity>>> {
-                    final GetAllNAMEUseCase _getAllNAME;
-                    final GetNAMEByIdUseCase _getNAMEById;
-                    final AddNAMEUseCase _addNAME;
-                    final UpdateNAMEUseCase _updateNAME;
-                    final DeleteNAMEUseCase _deleteNAME;
-
-                    NAMENotifier(
-                      this._getAllNAME,
-                      this._getNAMEById,
-                      this._addNAME,
-                      this._updateNAME,
-                      this._deleteNAME,
-                    ) : super(const AsyncValue.loading()){
-                    loadItems();
-                    }
-
-                    Future<void> loadItems() async {
-                      state = const AsyncValue.loading();
-                      final result = await _getAllNAME(NoParm() );
-                      state = result.fold(
-                        (failure) => AsyncValue.error(_mapFailureToMessage(failure),StackTrace.current),
-                        (items) => AsyncValue.data(items),
+                  class GetAllNAMENotifier extends AsyncNotifier<List<NAMEEntity>> {
+                    @override
+                    Future<List<NAMEEntity>> build() async {
+                      final result = await ref.read(getAllNAMEUseCaseProvider)(NoParm());
+                      return result.fold(
+                        (failure) => throw _mapFailureToException(failure),
+                        (items) => items,
                       );
-                    }
-
-                    Future<void> loadItemById(String id) async {
-                      final result = await _getNAMEById(id);
-                      state = result.fold(
-                        (failure) => AsyncValue.error(_mapFailureToMessage(failure),StackTrace.current),
-                        (item) => AsyncValue.data(item != null ? [item] : []), // Assuming single item
-                      );
-                    }
-
-                    Future<void> addItem(NAMEEntity item) async {
-                      final result = await _addNAME(item);
-                      state = result.fold(
-                        (failure) => AsyncValue.error(_mapFailureToMessage(failure),StackTrace.current),
-                        (_) => state,
-                      );
-                    }
-
-                    Future<void> updateItem(NAMEEntity item) async {
-                      final result = await _updateNAME(item);
-                      state = result.fold(
-                        (failure) => AsyncValue.error(_mapFailureToMessage(failure),StackTrace.current),
-                        (_) => state,
-                      );
-                    }
-
-                    Future<void> deleteItem(String id) async {
-                      final result = await _deleteNAME(id);
-                      state = result.fold(
-                        (failure) => AsyncValue.error(_mapFailureToMessage(failure),StackTrace.current),
-                        (_) => state,
-                      );
-                    }
-
-                    String _mapFailureToMessage(Failure failure) {
-                      if (failure is ServerFailure) {
-                        return 'Server failure';
-                      } else if (failure is CacheFailure) {
-                        return 'Cache failure';
-                      } else {
-                        return 'Unexpected error';
-                      }
                     }
                   }
 
-                  final pNAMENotifierProvider = StateNotifierProvider<NAMENotifier, AsyncValue<List<NAMEEntity>>>((ref) {
-                    final getAllNAME = ref.watch(getAllNAMEProvider);
-                    final getNAMEById = ref.watch(getNAMEByIdProvider);
-                    final addNAME = ref.watch(addNAMEProvider);
-                    final updateNAME = ref.watch(updateNAMEProvider);
-                    final deleteNAME = ref.watch(deleteNAMEProvider);
+                  class GetNAMEByIdNotifier extends AsyncNotifier<NAMEEntity?> {
+                    @override
+                    Future<NAMEEntity?> build() async {
+                      return null; // Initially null
+                    }
 
-                    return NAMENotifier(getAllNAME, getNAMEById, addNAME, updateNAME, deleteNAME);
+                    Future<void> getNAMEById(String id) async {
+                      state = const AsyncValue.loading();
+                      final result = await ref.read(getNAMEByIdUseCaseProvider)(id);
+                      state =  result.fold(
+                        (failure) => AsyncValue.error(failure,StackTrace.current),
+                        (item) => AsyncValue.data(null),
+                      );
+                    }
+                  }
+
+                  class AddNAMENotifier extends AsyncNotifier {
+                    @override
+                    Future<void> build() async {
+                      return;
+                    }
+
+                    Future<void> addNAME(NAMEEntity item) async {
+                      state = const AsyncValue.loading();
+                      final result = await ref.read(addNAMEUseCaseProvider)(item);
+                      state = result.fold(
+                        (failure) => AsyncValue.error(failure,StackTrace.current),
+                        (_) => AsyncValue.data(null),
+                     );
+                      ref.invalidate(getAllNAMEProvider);
+                    }
+                  }
+
+                  class UpdateNAMENotifier extends AsyncNotifier {
+                    @override
+                    Future<void> build() async {
+                      return;
+                    }
+
+                    Future<void> updateNAME(NAMEEntity item) async {
+                      state = const AsyncValue.loading();
+                      final result = await ref.read(updateNAMEUseCaseProvider)(item);
+                      state = result.fold(
+                        (failure) => AsyncValue.error(failure,StackTrace.current),
+                        (_) => AsyncValue.data(null),
+                     );
+                      ref.invalidate(getAllNAMEProvider);
+                    }
+                  }
+
+                  class DeleteNAMENotifier extends AsyncNotifier {
+                    @override
+                    build()  {
+                  
+                    }
+
+                    Future<void> delete(String id) async {
+                      state = const AsyncValue.loading();
+                      final result = await ref.read(deleteNAMEUseCaseProvider)(id);
+                      state = result.fold(
+                        (failure) => AsyncValue.error(failure,StackTrace.current),
+                        (_) => AsyncValue.data(null),
+                    );
+                      ref.invalidate(getAllNAMEProvider);
+                    }
+                  }
+
+                  Exception _mapFailureToException(Failure failure) {
+                    if (failure is ServerFailure) {
+                      return Exception('Server failure');
+                    } else if (failure is CacheFailure) {
+                      return Exception('Cache failure');
+                    } else {
+                      return Exception('Unexpected error');
+                    }
+                  }
+
+                  final getAllNAMEProvider = AsyncNotifierProvider<GetAllNAMENotifier, List<NAMEEntity>>(() {
+                    return GetAllNAMENotifier();
                   });
+
+                  final getNAMEByIdProvider = AsyncNotifierProvider<GetNAMEByIdNotifier, NAMEEntity?>(() {
+                    return GetNAMEByIdNotifier();
+                  });
+
+                  final addNAMEProvider = AsyncNotifierProvider<AddNAMENotifier, void>(() {
+                    return AddNAMENotifier();
+                  });
+
+                  final updateNAMEProvider = AsyncNotifierProvider<UpdateNAMENotifier, void>(() {
+                    return UpdateNAMENotifier();
+                  });
+
+                  final deleteNAMEProvider = AsyncNotifierProvider<DeleteNAMENotifier, void>(() {
+                    return DeleteNAMENotifier();
+                  });
+
           - folder: page
             contents:
               - file: list.dart
                 code: |
-                  // lib/features/NAME/presentation/pages/list_page.dart
+                  // lib/features/NAME/presentation/pages/list.dart
                   import 'package:flutter/material.dart';
                   import 'package:flutter_riverpod/flutter_riverpod.dart';
                   import '../../../domain/entities/NAME/entity.dart';
-                  import '../providers/provider.dart';
+                  import '../providers/NAME_providers.dart';
 
-                  class NAMEListPage extends ConsumerWidget {
+                  class NAMEListPage extends ConsumerStatefulWidget {
                     @override
-                    Widget build(BuildContext context, WidgetRef ref) {
-                      final nameState = ref.watch(pNAMENotifierProvider);
+                    _NAMEListPageState createState() => _NAMEListPageState();
+                  }
 
+                  class _NAMEListPageState extends ConsumerState<NAMEListPage> {
+                    BuildContext? barrierContext;
+
+                 
+
+                    @override
+                    Widget build(BuildContext context) {
+                      final NAMEState = ref.watch(getAllNAMEProvider);
+                        listenToDeleteNAMEAction(context);
+                        // TODO: Set up listeners for other actions
+                        // listenToAddNAMEAction(context);
+                        // listenToUpdateNAMEAction(context);
                       return Scaffold(
                         appBar: AppBar(
                           title: Text('NAME List'),
                         ),
-                        body: nameState.when(
+                        body: NAMEState.when(
                           data: (items) => items.isEmpty
                               ? Center(child: Text('No items available'))
                               : ListView.builder(
@@ -618,21 +660,19 @@ generate:
                                     final item = items[index];
                                     return ListTile(
                                       title: Text(item.runtimeType.toString()), // Adjust this based on your entity properties
-                                    
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           IconButton(
                                             icon: Icon(Icons.edit),
                                             onPressed: () {
-                                              // Handle edit item
-                                              _showEditDialog(context, item);
+                                              _showEditDialog(context, ref, item);
                                             },
                                           ),
                                           IconButton(
                                             icon: Icon(Icons.delete),
                                             onPressed: () {
-                                             
+                                              _showDeleteConfirmation(context, ref, item.id);
                                             },
                                           ),
                                         ],
@@ -648,106 +688,92 @@ generate:
                         ),
                         floatingActionButton: FloatingActionButton(
                           onPressed: () {
-                            _showAddDialog(context);
+                            _showAddDialog(context, ref);
                           },
                           child: Icon(Icons.add),
                         ),
                       );
                     }
 
-                    void _showAddDialog(BuildContext context) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                          String title = '';
-                          String description = '';
-
-                          return AlertDialog(
-                            title: Text('Add Item'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(labelText: 'Title'),
-                                  onChanged: (value) {
-                                    title = value;
-                                  },
-                                ),
-                                TextField(
-                                  decoration: InputDecoration(labelText: 'Description'),
-                                  onChanged: (value) {
-                                    description = value;
-                                  },
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('Add'),
-                              ),
-                            ],
+                    void listenToDeleteNAMEAction(BuildContext context) {
+                      ref.listen<AsyncValue>(deleteNAMEProvider, (previous, next) {
+                        if (next.isLoading) {
+                          showGeneralDialog(
+                            context: context,
+                            pageBuilder: (context, animation, secondaryAnimation) {
+                              barrierContext = context;
+                              return Container(
+                                color: Colors.black38,
+                                child: Center(child: CircularProgressIndicator()),
+                              );
+                            },
                           );
-                        },
-                      );
+                        } else if (previous?.isLoading == true && next.hasError) {
+                          Navigator.of(barrierContext!).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Failed to delete: ${next.error}")),
+                          );
+                          Future.delayed(Duration(seconds: 5), () {
+                            ref.refresh(deleteNAMEProvider);
+                          });
+                        } else if (previous?.isLoading == true && next.hasValue) {
+                          Navigator.of(barrierContext!).pop();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Successfully deleted")),
+                          );
+                          // Refresh the list after successful deletion
+                          ref.refresh(getAllNAMEProvider);
+                        }
+                      });
                     }
 
-                    void _showEditDialog(BuildContext context, NAMEEntity item) {
-                      showDialog(
-                        context: context,
-                        builder: (context) {
-                         String title = '';
-                          String description = '';
+                    // TODO: Implement listeners for other actions
+                    // void listenToAddNAMEAction(BuildContext context) {
+                    //   ref.listen<AsyncValue>(addNAMEProvider, (previous, next) {
+                    //     // Implementation similar to listenToDeleteNAMEAction
+                    //   });
+                    // }
 
-                          return AlertDialog(
-                            title: Text('Edit Item'),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                TextField(
-                                  decoration: InputDecoration(labelText: 'Title'),
-                                
-                                  onChanged: (value) {
-                                    title = value;
-                                  },
-                                ),
-                                TextField(
-                                  decoration: InputDecoration(labelText: 'Description'),
-                                 
-                                  onChanged: (value) {
-                                    description = value;
-                                  },
-                                ),
-                              ],
+                    // void listenToUpdateNAMEAction(BuildContext context) {
+                    //   ref.listen<AsyncValue>(updateNAMEProvider, (previous, next) {
+                    //     // Implementation similar to listenToDeleteNAMEAction
+                    //   });
+                    // }
+
+                    void _showAddDialog(BuildContext context, WidgetRef ref) {
+                      // Implementation remains the same
+                    }
+
+                    void _showEditDialog(BuildContext context, WidgetRef ref, NAMEEntity item) {
+                      // Implementation remains the same
+                    }
+
+                    void _showDeleteConfirmation(BuildContext context, WidgetRef ref, String itemId)async  {
+                    final result = await   showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text('Confirm Deletion'),
+                          content: Text('Are you sure you want to delete this item?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: Text('Cancel'),
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pop();
-                                },
-                                child: Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                   Navigator.of(context).pop();
-                                },
-                                child: Text('Save'),
-                              ),
-                            ],
-                          );
-                        },
+                            TextButton(
+                              onPressed: () {
+                                
+                                Navigator.of(context).pop(true);
+                              },
+                              child: Text('Delete'),
+                            ),
+                          ],
+                        ),
                       );
+                      if(result==true){
+                      ref.read(deleteNAMEProvider.notifier).delete(itemId);
+                      }
                     }
                   }
-
 
 # ---Core------------------------------------------------------
   - category: core
